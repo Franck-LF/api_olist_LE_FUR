@@ -70,8 +70,8 @@ py -m uvicorn main:app --reload
 
 ## Sécurité
 
-- …
-- …
+- Les mots de passe n'apparaissent jamais dans les fichiers .py, ni dans d'autres fichiers, on les met seulement dans le fichier .env et on ajoute .env dans le .gitignore pour ne pas mettre le .env sur github.
+- Les paramètres %(nom)s. Ne construis jamais une requête en collant une valeur reçue dans le texte SQL, on utilise à la place le système de paramètres dynamiques %().
 
 ## Données
 
