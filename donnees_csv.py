@@ -80,15 +80,23 @@ def top_categories(n: int = 10) -> list[dict]:
     total = v['montant'].sum()
 
     # 2. CA par catégorie, trié du plus grand au plus petit, puis les n premiers
-    cat = v.groupby("categorie")["montant"].sum().sort_values(ascending=False).head(n)
-
-    print(100 * cat / total)
-    print(f"Somme des {n} parts: {(100 * cat / total).sum()}")
+    cat = resultat = (
+    v.groupby('categorie')['montant']
+    .sum()
+    .reset_index()
+    .sort_values(
+        by=['montant', 'categorie'],
+        ascending=[False, True]
+    )
+    .set_index('categorie')['montant'].head(n)
+)
+    # print(100 * cat / total)
+    # print(f"Somme des {n} parts: {(100 * cat / total).sum()}")
 
     # 3. Une liste de dictionnaires : categorie, ca (arrondi à 2), part_ca (en %, arrondi à 2)
     return [{"categorie": nom, 
              "ca": round(float(ca), 2), 
-             "part_ca": round(100 * float(ca / total), 2)} 
+             "part_ca": round(100 * float(ca / total), 3)} 
              for nom, ca in cat.items()]
 
 
@@ -107,8 +115,8 @@ def etat(code: str) -> dict | None:
     ca = float(e["montant"].sum())
     return [{
         "etat": code,
-        "ca": float(ca),
-        "nb_commandes": int(v.shape[0]),
+        "ca": round(float(ca), 2),
+        "nb_commandes": int(e['order_id'].nunique()),
         "part_ca": round(float(100 * ca / v['montant'].sum()), 2),  # part du CA total, en %, arrondie à 2 décimales
     }]
 
@@ -116,7 +124,7 @@ def etat(code: str) -> dict | None:
 def ca_categorie(code_cat: str) -> dict | None:
     """Mission POUR ALLER PLUS LOIN — Le CA pour une catégorie."""
     v = charger()
-    print("CODE CAT", code_cat)
+    # print("CODE CAT", code_cat)
 
     # 1. On garde les lignes correspondant à la catégorie
     e = v[v["categorie"] == code_cat]
