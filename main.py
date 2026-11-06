@@ -5,10 +5,20 @@ Lancement, depuis le dossier api_olist :
     macOS/Linux  : python3 -m uvicorn main:app --reload
 Puis ouvre http://127.0.0.1:8000/docs
 """
-from fastapi import FastAPI, HTTPException, Path, Query
+import os
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Path, Query, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-import donnees_csv as donnees   # J2, mission 10 : cette ligne sera remplacée
+from erreurs import SourceIndisponible
+
+load_dotenv()
+if os.getenv("SOURCE_DONNEES", "csv") == "postgresql":
+    import donnees_pg as donnees
+else:
+    import donnees_csv as donnees
 
 app = FastAPI(
     title="API des indicateurs de ventes Olist",
@@ -29,6 +39,12 @@ class Indicateurs(BaseModel):
     nb_commandes: int
     ca_total: float
     panier_moyen: float
+
+
+# ---------- Erreur de source : 503 au lieu d'une erreur 500 illisible ----------
+@app.exception_handler(SourceIndisponible)
+def source_indisponible(request: Request, erreur: SourceIndisponible):
+    return JSONResponse(status_code=503, content={"detail": str(erreur)})
 
 
 # ---------- Routes ----------
