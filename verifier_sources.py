@@ -20,7 +20,7 @@ ESSAIS = [
     ("ventes_mensuelles('2017-01', '2017-12')", lambda d: d.ventes_mensuelles("2017-01", "2017-12")),
     ("top_categories(10)", lambda d: d.top_categories(10)),
     ("top_categories(50)", lambda d: d.top_categories(50)),
-    ("etat('SP')", lambda d: d.etat("SP")),
+    ("etat('SP')", lambda d: d.etat("RJ")),
     ("etat('RR')", lambda d: d.etat("RR")),
     ("etat('XX')", lambda d: d.etat("XX")),
 ]

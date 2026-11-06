@@ -65,9 +65,9 @@ def ventes_mensuelles(debut: str | None = None, fin: str | None = None) -> list[
                count(DISTINCT order_id) AS nb_commandes
         FROM analytique.ventes
         WHERE (%(debut)s::text IS NULL OR mois >= %(debut)s)
-          AND (...)
-        GROUP BY ...
-        ORDER BY ...
+          AND (%(fin)s::text IS NULL OR mois <= %(fin)s)
+        GROUP BY mois
+        ORDER BY mois
     """, {"debut": debut, "fin": fin})
 
 
@@ -76,15 +76,31 @@ def top_categories(n: int = 10) -> list[dict]:
     return _lire("""
         SELECT categorie,
                round(sum(montant), 2) AS ca,
-               round(100 * sum(montant) / (SELECT sum(montant) FROM analytique.ventes), 2) AS part_ca
+               round(100 * sum(montant) / (SELECT sum(montant) FROM analytique.ventes), 3) AS part_ca
         FROM analytique.ventes
-        GROUP BY ...
-        ORDER BY ...
-        LIMIT ...
+        GROUP BY categorie
+        ORDER BY part_ca DESC, categorie
+        LIMIT %(n)s
     """, {"n": n})
 
 
 def etat(code: str) -> dict | None:
+    """Mission 9.4 — même résultat que donnees_csv.etat."""
+    ligne = _lire("""
+        SELECT %(code)s::text            AS etat,
+               round(sum(montant), 2)    AS ca,
+               count(DISTINCT order_id)  AS nb_commandes,
+               round(100 * sum(montant) / (SELECT sum(montant) FROM analytique.ventes), 2) AS part_ca
+        FROM analytique.ventes
+        WHERE customer_state = %(code)s::text
+    """, {"code": code})[0]
+
+    # Sans aucune vente, la requête renvoie quand même UNE ligne, avec nb_commandes = 0
+    if ligne["nb_commandes"] == 0:
+        return None
+    return [ligne]
+
+def etat__(code: str) -> dict | None:
     """Mission 9.4 — même résultat que donnees_csv.etat."""
     ligne = _lire("""
         SELECT %(code)s::text            AS etat,

@@ -47,30 +47,32 @@ def main() -> None:
     resultats.append(verifier("CA total = 15424463.65", abs(ind["ca_total"] - 15424463.65) < 0.01))
 
     # 3. Ventes mensuelles 2017 + sauvegarde CSV
-    reponse = appeler("/ventes/mensuelles", {"debut": ..., "fin": ...})
+    reponse = appeler("/ventes/mensuelles", {"debut": "2017-01", "fin": "2017-12"})
     mois = reponse.json()
-    resultats.append(verifier("12 mois en 2017", len(mois) == ...))
+    resultats.append(verifier("12 mois en 2017", len(mois) == 12))
     record = max(mois, key=lambda m: m["ca"])
     resultats.append(verifier(f"Record 2017 en novembre ({record['mois']}, {record['ca']} R$)",
-                              record["mois"] == ...))
+                              record["mois"] == '2017-11'))
     with open("ca_mensuel_2017.csv", "w", newline="", encoding="utf-8") as f:
         ecrivain = csv.DictWriter(f, fieldnames=["mois", "ca", "nb_commandes"])
         ecrivain.writeheader()
-        ecrivain.writerows(...)
+        ecrivain.writerows(mois)
     print("   → ca_mensuel_2017.csv enregistré")
 
     # 4. Top catégories : demande 3 catégories, vérifie qu'il y en a 3 et que health_beauty est en tête
-    top = ...
-    resultats.append(verifier("3 catégories, health_beauty en tête", ...))
+    reponse = appeler("/categories/top", {"n" : 3})
+    top = reponse.json()
+    resultats.append(verifier("3 catégories, health_beauty en tête", top[0]['categorie'] == 'health_beauty'))
 
     # 5. État : SP pèse environ 37 % du CA
-    sp = ...
-    resultats.append(verifier("SP pèse environ 37 % du CA", ...))
+    reponse = appeler("/etats/SP")
+    sp = reponse.json()
+    resultats.append(verifier("SP pèse environ 37 % du CA", abs(sp[0]['part_ca'] - 37) < 0.5))
 
     # 6. Les erreurs sont bien signalées (compare .status_code au code attendu)
     resultats.append(verifier("État inconnu → 404", appeler("/etats/XX").status_code == 404))
-    resultats.append(verifier("n = 0 → 422", ...))
-    resultats.append(verifier("debut après fin → 400", ...))
+    resultats.append(verifier("n = 0 → 422", appeler("/categories/top", {"n" : 0}).status_code == 422))
+    resultats.append(verifier("debut après fin → 400", appeler("/ventes/mensuelles", {"debut": "2017-11", "fin": "2017-03"}).status_code == 400))
 
     print(f"\nBilan : {sum(resultats)}/{len(resultats)} contrôles réussis")
 
